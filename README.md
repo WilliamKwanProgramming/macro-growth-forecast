@@ -1,169 +1,379 @@
-# World Econnomic Growth Forecast
+# Global GDP Forecasting MLOps Pipeline
 
-The International Monetary Fund (IMF), since its inception, has played a pivotal role in stabilizing the international landscape of finance and economics. Its comprehensive databases and analytical prowess have been instrumental in aiding member countries to navigate through economic fluctuations and policy-making processes. In the contemporary globalized economy, the IMF's insights are more valuable than ever, providing a wealth of information that can be leveraged to predict future economic trends and potential market shifts.
+An end-to-end, production-ready pipeline for forecasting country-level GDP growth using the IMF World Economic Outlook (WEO) database. The project combines modern MLOps practices (Airflow, DVC, MLflow, Docker, CI/CD) with deep learning models (e.g., LSTMs in TensorFlow) to build reproducible, scalable economic forecasting workflows.
 
-Building on this foundation, our project aims to harness the vast repository of financial data curated by the IMF to develop robust models for forecasting Gross Domestic Product (GDP) growth across various economies. By employing advanced machine learning techniques and deep learning algorithms, we intend to analyze patterns within the data that could indicate future economic outcomes. This predictive model could serve as a crucial tool for economists, policymakers, and investors alike, offering a glimpse into the economic trajectory of nations in the ever-evolving financial landscape.
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Data Source](#data-source)
+- [Architecture & Tooling](#architecture--tooling)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Repository Setup](#repository-setup)
+  - [Airflow & Docker](#airflow--docker)
+  - [DVC Setup](#dvc-setup)
+- [Workflow Orchestration](#workflow-orchestration)
+- [Modeling & Experiment Tracking](#modeling--experiment-tracking)
+- [Serving & Visualization](#serving--visualization)
+- [Project Structure](#project-structure)
+- [Development Workflow](#development-workflow)
+- [Roadmap](#roadmap)
+- [License](#license)
+
+---
+
+## Overview
+
+The International Monetary Fund (IMF) plays a central role in stabilizing and monitoring the global financial system through its data and analytics. This project leverages the IMF **World Economic Outlook (WEO)** database to build a robust forecasting pipeline for Gross Domestic Product (GDP) growth across countries and regions.
+
+Key goals:
+
+- Use historical macroeconomic indicators to forecast country-level GDP growth.
+- Build a **reproducible, automated MLOps stack** for data ingestion, training, evaluation, and deployment.
+- Provide a foundation that is useful to **economists, data scientists, policymakers, and investors**.
+
+At a high level, the system:
+
+1. Ingests and preprocesses IMF WEO data.
+2. Engineers features and prepares time series datasets.
+3. Trains deep learning models (e.g., LSTM) using TensorFlow.
+4. Tracks experiments and artifacts with MLflow and DVC.
+5. Orchestrates everything through Airflow and Docker.
+6. Exposes models via REST APIs and dashboards.
+
+---
 
 ## Data Source
 
 ### World Economic Outlook 2024 Database
-The dataset was obtained from the International Monetary Fund’s website (IMF). The WEO database contains a vast amount of data on various selected macroeconomic indicators for individual countries, regions, and the world as a whole, including national accounts, inflation, unemployment rates, balance of payments, and fiscal indicators.
 
-Source : [Access the dataset here](https://www.imf.org/en/Publications/SPROLLS/world-economic-outlook-databases#sort=%40imfdate%20descending)
+The primary dataset is the **World Economic Outlook (WEO)** database from the IMF, which contains:
+
+- National accounts (e.g., GDP, growth rates)
+- Inflation and unemployment indicators
+- Balance of payments
+- Fiscal and other macroeconomic indicators
+
+Source:  
+[Access the dataset here](https://www.imf.org/en/Publications/SPROLLS/world-economic-outlook-databases#sort=%40imfdate%20descending)
 
 ### Data Card
-- **Size**: 58 columns, 8624 rows
-- **File Format**: *.xls
-- **Data Format**: Grouped by Subject then Country
 
-### Variables
+- **Size:** 8,624 rows × 58 columns  
+- **File Format:** `.xls`  
+- **Organization:** Grouped by *Subject* (indicator) and then by *Country*  
 
-| Variable Name                | Role      | Type       | Description                                   |
-|------------------------------|-----------|------------|-----------------------------------------------|
-| WEO Country Code             | ID        | Integer    | Unique code for each country                  |
-| WEO Subject Code             | ID        | String     | Code for GDP Parameters                       |
-| Country                      | Feature   | String     | Countries of the world (196)                  |
-| Subject Descriptor           | Feature   | Categorical| Various Factors affecting GDP                 |
-| Units                        | ID        | String     | Unit of GDP Factors                           |
-| Scale                        | ID        | String     | Scale of units                                |
-| Country/Series-specific notes| ID        | String     | Information about source                      |
-| Years (multiple columns)     | Feature   | Continuous | Years considered (1980-2029)                  |
-| Estimate Start After         | Feature   | Integer    | Year till which data is collected             |
+### Core Variables
 
-## Setup Instructions
+| Variable Name                 | Role      | Type         | Description                                              |
+|------------------------------|-----------|--------------|----------------------------------------------------------|
+| WEO Country Code             | ID        | Integer      | Unique numeric identifier for each country               |
+| WEO Subject Code             | ID        | String       | Code for GDP-related and macroeconomic time series       |
+| Country                      | Feature   | String       | Country/economy name (196 economies)                     |
+| Subject Descriptor           | Feature   | Categorical  | Description of the macroeconomic indicator               |
+| Units                        | ID        | String       | Units of measurement for the indicator                   |
+| Scale                        | ID        | String       | Scaling for units (e.g., millions, billions)             |
+| Country/Series-specific notes| ID        | String       | Metadata about sources and adjustments                   |
+| Years (1980–2029; multiple)  | Feature   | Continuous   | Time series values per year                              |
+| Estimate Start After         | Feature   | Integer      | Year after which observations are estimates              |
+
+---
+
+## Architecture & Tooling
+
+This project is designed as a **modern MLOps system**, leveraging the following stack:
+
+- **Version Control & CI/CD**
+  - GitHub (repo, PRs, code review)
+  - GitHub Actions (CI/CD, pytest, Docker builds)
+- **Experimentation & Data Science**
+  - Jupyter Notebook
+  - TensorFlow
+  - MLflow (experiment tracking)
+- **Data & Model Versioning**
+  - DVC with a GCP-backed remote
+- **Orchestration & Automation**
+  - Apache Airflow (DAG orchestration)
+  - Docker / Docker Compose
+- **Serving & Visualization**
+  - FastAPI / Flask (REST APIs)
+  - Streamlit (interactive apps)
+  - Looker (BI dashboards)
+- **Infrastructure**
+  - Google Cloud Platform (GCP)
+
+Airflow DAG example:
+
+<img src="assets/airflow_dag.png" alt="Airflow DAG" width="800" height="400">
+
+Airflow logo:
+
+<img src="assets/Logo.jpg" alt="airflow" width="900" height="200">
+
+DVC on GCP:
+
+<img src="assets/DVC_in_GCP.png" alt="DVC in GCP" width="800" height="400">
+
+MLflow experiment views:
+
+<img src="assets/mlflow.PNG" alt="MLflow Run View" width="800" height="400">
+
+<img src="assets/mlfloq1.PNG" alt="MLflow Experiment Tracking" width="800" height="400">
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-Ensure you have the following installed on your system:
+Make sure you have the following installed:
 
-- Docker
-- Python > 3.8
-- Google Cloud Platform
+- **Python** >= 3.8  
+- **Docker** & **Docker Compose**  
+- **Google Cloud Platform (GCP)** account & credentials  
+- (Optional) Virtual environment tool (e.g., `venv`, `conda`, `poetry`)
 
-### Step-by-Step Setup
+### Repository Setup
 
-1. **Clone the Repository**
 ```bash
 git clone https://github.com/namansnghl/World-Econ-Growth-Forecast
 cd <repository-directory>
 ```
 
-2. **Check pyhton version**
+Check your Python version:
+
 ```bash
 python --version
 ```
 
-3. **Install Python Dependencies**
+Install Python dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
-4. **Install airflow**
-```bash
-pip install "apache-airflow[celery]==2.9.1" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.9.1/constraints-3.8.txt"
-```
-Make sure to change the python version above - "constraints-3.x"
+### Airflow & Docker
 
-5. **Check if you have enough memory to run docker (recommended 4GB)**
-```bash
-docker run --rm "debian:bullseye-slim" bash -c 'numfmt --to iec $(echo $(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE))))'
-```
+1. Install Apache Airflow (Celery executor example):
 
-6. **Initialize docker-compose.yaml**
-```bash
-curl -LfO 'https://airflow.apache.org/docs/apache-airflow/2.9.1/docker-compose.yaml'
-```
+   ```bash
+   pip install "apache-airflow[celery]==2.9.1" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.9.1/constraints-3.8.txt"
+   ```
 
-7. **Initialize the database (only first time)**
-```bash
-docker compose up airflow-init
-```
+   > Update `constraints-3.x` based on your Python 3.x version.
 
-8. **Run Airflow with Docker**
-```bash
-docker compose up
-```
+2. Confirm you have enough memory for Docker (recommended ≥ 4 GB):
 
-9.  **Visit localhost:8080 login with credentials**
-```bash
-user:airflow
-password:airflow
-```
+   ```bash
+   docker run --rm "debian:bullseye-slim" bash -c 'numfmt --to iec $(echo $(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE))))'
+   ```
 
-10. **Run the DAG by clicking on the play button on the right side of the window**<br/>
-Ignore the example DAGS by setting load examples as false in docker-compose.yaml
-```bash
+3. Download the Airflow `docker-compose.yaml`:
+
+   ```bash
+   curl -LfO 'https://airflow.apache.org/docs/apache-airflow/2.9.1/docker-compose.yaml'
+   ```
+
+4. Initialize the Airflow database (first time only):
+
+   ```bash
+   docker compose up airflow-init
+   ```
+
+5. Start Airflow:
+
+   ```bash
+   docker compose up
+   ```
+
+6. Open the Airflow UI at [http://localhost:8080](http://localhost:8080) and log in:
+
+   ```text
+   user: airflow
+   password: airflow
+   ```
+
+7. In the Airflow UI, enable and trigger the GDP Forecasting DAG (click the play ▶️ button).
+
+To disable example Airflow DAGs, set this in `docker-compose.yaml`:
+
+```yaml
 AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
 ```
 
-11. **DVC Setup**
+### DVC Setup
+
+Install DVC:
+
 ```bash
 pip install dvc
 ```
 
-12. **Initialize DVC**
+Initialize DVC in the repo:
+
 ```bash
 dvc init
 ```
 
-13. **Add files to DVC**
+Track files with DVC:
+
 ```bash
 dvc add <file-path>
 ```
 
-## Tools Used for MLOps
-- GitHub
-- Jupyter Notebook
-- Docker
-- Airflow
-- DVC
-- MLflow
-- TensorFlow
-- Flask
-- Streamlit
-- Google Cloud Platform (GCP)
+Configure your GCP remote (example):
 
-     <img src="assets/Logo.jpg" alt="airflow" width="900" height="200">
+```bash
+dvc remote add -d gcp_remote gcs://<your-gcs-bucket>/weo-forecast
+dvc push
+```
 
-1. **GitHub**: GitHub hosts the project's source code, documentation, and manages issues and pull requests. It has 3 branches `main`, `test-stage` and  `dev`. `pytest` is configured with GitActions. It builds and tests on every push.
+---
 
-2. **Jupyter Notebook**:  We have used it to experiment with different data cleaning and feature engineering techniques, as well as to visualize initial model results.
+## Workflow Orchestration
 
-3. **DVC (Data Version Control)**: For managing datasets and machine learning models versioning, ensuring reproducibility and efficient data handling. DVC allows us to track data and model versions, making it easy to reproduce results and collaborate on data-intensive tasks without version conflicts. It is configured with `GCP`. `.dvc` files are stored in Git which is the hashed version of the file in the cloud
+Airflow orchestrates the full lifecycle:
 
-    <img src="assets/DVC_in_GCP.png" alt="airflow" width="800" height="400">
+1. **Data Ingestion:** Download or load the WEO `.xls` files.
+2. **Preprocessing:** Clean, transform, and normalize macroeconomic features.
+3. **Feature Engineering:** Build time series windows and additional features.
+4. **Model Training:** Trigger TensorFlow training jobs.
+5. **Evaluation & Logging:** Log metrics and artifacts to MLflow and DVC.
+6. **Deployment Hooks:** Optionally trigger container builds or API updates.
 
-4. **PyTest**: For writing and running unit tests to ensure code quality and functionality of individual components.
+Each step is a task in the Airflow DAG, allowing for retries, alerting, and scheduling.
 
-5. **GitHub Actions**: To automate workflows for continuous integration and continuous deployment (CI/CD), including running tests, building Docker images, and deploying models.
+---
 
-6. **Docker**: Containerizes applications and their dependencies, ensuring consistency across different environments and simplifying deployment.`Dockerfile` is hosted on project root.
+## Modeling & Experiment Tracking
 
-7. **Airflow**: It manages the entire data pipeline, scheduling and monitoring tasks to ensure timely and reliable execution of the data processing and model training workflows. 
+### TensorFlow Models
 
+The project uses TensorFlow (e.g., LSTM-based architectures) for:
 
-    <img src="assets/airflow_dag.png" alt="airflow" width="800" height="400">
+- Univariate and multivariate GDP growth forecasting.
+- Capturing temporal dependencies in economic indicators.
 
+### MLflow
 
-8. **TensorFlow**: It provides a comprehensive ecosystem for developing, training, and deploying machine learning models. TensorFlow is used to build and train the predictive models in this project, leveraging its powerful APIs and tools to handle complex data and modeling tasks.
+MLflow tracks:
 
-9. **MLFlow**: Managing the machine learning lifecycle, including experimentation, reproducibility, and model deployment, along with tracking metrics and parameters.
-    
-    MLflow Model monitoring: Tracked and saved various elements during the training process, including hyperparameters like the number of epochs and batch size, and key performance metrics such as loss, validation loss, mean absolute error (MAE), mean squared error (MSE), and R-squared (R²). Additionally, MLflow logged the trained LSTM model and its architecture as artifacts, ensuring that we could reproduce and evaluate the model's performance across different runs.
-    <img src="assets/mlflow.PNG " width="800" height="400">
+- **Hyperparameters:** epochs, batch_size, learning rate, etc.  
+- **Metrics:** loss, validation loss, MAE, MSE, R².  
+- **Artifacts:** trained models, model architecture, plots, and logs.
 
-    
-MLflow Experiment Tracking:
+This makes it easy to:
 
-   
-<img src="assets/mlfloq1.PNG " width="800" height="400">
+- Compare different model runs.
+- Roll back to a known good model.
+- Reproduce experiments reliably.
 
-11. **FastAPI/Flask**: It serves as the web framework for building RESTful APIs to use the machine learning models as services for integration with other applications. 
+---
 
-12. **Logging**: Implements logging mechanisms to track the performance, errors, and usage of the deployed models. Logging provides insights into the model's behavior and performance in production, helping to identify and troubleshoot issues quickly.
+## Serving & Visualization
 
-13. **Looker**: Utilized for business intelligence and data visualization to create interactive dashboards and reports that provide insights into model performance and business impact. 
+### FastAPI / Flask
 
-14. **Streamlit**: Creates interactive web applications for visualizing data, model predictions, and performance metrics, facilitating easier engagement. 
+Trained models can be exposed via REST APIs using FastAPI or Flask:
 
-15. **Google Cloud Platform**: Provides scalable cloud infrastructure for hosting, managing, and deploying machine learning models and applications. GCP offers the necessary infrastructure to deploy models at scale, ensuring high availability and performance for the deployed services.
+- `/predict` endpoint for GDP forecasts.
+- Health check endpoints for monitoring.
+- JSON-based request/response schema.
+
+This enables integration with:
+
+- Internal tools
+- Dashboards
+- External applications
+
+### Streamlit
+
+Streamlit apps can be used to:
+
+- Explore data and feature distributions.
+- Visualize forecasts and uncertainty bands.
+- Provide interactive controls (country selection, forecast horizon, etc.).
+
+### Looker
+
+Looker (or a similar BI platform) can be integrated to deliver:
+
+- Executive summary dashboards.
+- Country/region-level forecast comparisons.
+- Performance monitoring over time.
+
+---
+
+## Project Structure
+
+> Note: Actual structure may vary slightly depending on implementation, but a typical layout is:
+
+```text
+World-Econ-Growth-Forecast/
+├─ airflow/
+│  ├─ dags/
+│  │  └─ gdp_forecast_dag.py
+│  └─ configs/
+├─ data/
+│  ├─ raw/
+│  └─ processed/
+├─ notebooks/
+│  └─ exploration_and_eda.ipynb
+├─ src/
+│  ├─ data/
+│  ├─ features/
+│  ├─ models/
+│  ├─ serving/
+│  └─ utils/
+├─ tests/
+├─ assets/
+│  ├─ Logo.jpg
+│  ├─ DVC_in_GCP.png
+│  ├─ airflow_dag.png
+│  ├─ mlflow.PNG
+│  └─ mlfloq1.PNG
+├─ docker-compose.yaml
+├─ Dockerfile
+├─ dvc.yaml
+├─ requirements.txt
+└─ README.md
+```
+
+---
+
+## Development Workflow
+
+1. **Create a feature branch** from `dev` for new work.
+2. **Develop and test** locally:
+   - Update code in `src/`.
+   - Add or update tests in `tests/`.
+   - Run `pytest`.
+3. **Log experiments** through MLflow:
+   - Compare runs and pick candidate models.
+4. **Commit DVC changes** for data/model updates:
+   - `dvc add`, `dvc push`.
+5. **Open a Pull Request** into `dev`:
+   - GitHub Actions will run CI (pytest, lint, etc.).
+6. **Merge to `main`** when validated:
+   - Optional: Trigger deployment or container build.
+
+---
+
+## Roadmap
+
+Potential future enhancements:
+
+- Add richer macroeconomic and financial features (e.g., commodity prices, interest rates).
+- Incorporate probabilistic forecasting (e.g., quantile or Bayesian models).
+- Implement automated model selection and hyperparameter tuning.
+- Add canary deployments or A/B tests for model updates.
+- Extend the API to support scenario analysis (e.g., shocks to inflation or policy variables).
+
+---
+
+## License
+
+This project is for educational and demonstration purposes.  
+Please refer to the repository's LICENSE file (if present) for detailed licensing terms.
